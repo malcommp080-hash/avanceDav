@@ -4,53 +4,50 @@
 
 @section('contenido')
 @php
-  // Conserva los demás filtros al cambiar de segmento
-  $base = array_filter(['categoria' => $filtros['categoria'] ?? null, 'q' => $filtros['q'] ?? null, 'filtro' => $filtros['filtro'] ?? null]);
+  // Conserva los demás filtros al cambiar de segmento u orden
+  $base = array_filter(['categoria' => $filtros['categoria'] ?? null, 'q' => $filtros['q'] ?? null, 'filtro' => $filtros['filtro'] ?? null, 'orden' => $filtros['orden'] ?? null]);
   $actual = $filtros['segmento'] ?? null;
-  $iconos = ['CABALLERO' => '👨', 'DAMA' => '👩', 'NINO' => '👦', 'NINA' => '👧'];
+  $migas = $categoria ? ['Categorías' => route('tienda.categorias'), $categoria->Nombre => null] : [$titulo => null];
+  $ordenes = ['' => 'Recomendado', 'nuevos' => 'Más nuevos', 'precio_asc' => 'Precio: menor a mayor', 'precio_desc' => 'Precio: mayor a menor', 'nombre' => 'Nombre'];
 @endphp
 
-<div class="panel">
-  @include('htmlv.partials.barra', ['titulo' => $titulo, 'volver' => $categoria ? route('tienda.categorias') : route('tienda.inicio')])
+@include('htmlv.partials.barra', ['titulo' => $titulo, 'migas' => $migas])
 
-  <div class="contenido">
-    @include('htmlv.partials.avisos')
+<div class="contenedor seccion">
+  @include('htmlv.partials.avisos')
 
-    {{-- En lugar de 3 pantallas (Hombre/Mujer → Adulto/Niño → producto) un clic filtra --}}
+  <div class="herramientas">
     @if($segmentos->isNotEmpty())
-    <nav class="chips" aria-label="Filtrar por">
-      <a href="{{ route('tienda.catalogo', $base) }}" class="chip {{ !$actual ? 'act' : '' }}">Todos</a>
+    <nav class="segmentos" aria-label="Filtrar por">
+      <a href="{{ route('tienda.catalogo', array_diff_key($base, ['segmento' => 1])) }}" class="{{ !$actual ? 'act' : '' }}">Todos</a>
       @foreach($segmentos as $val => $txt)
-      <a href="{{ route('tienda.catalogo', $base + ['segmento' => $val]) }}" class="chip {{ $actual === $val ? 'act' : '' }}"><span aria-hidden="true">{{ $iconos[$val] ?? '' }}</span> {{ $txt }}</a>
+      <a href="{{ route('tienda.catalogo', $base + ['segmento' => $val]) }}" class="{{ $actual === $val ? 'act' : '' }}" @if($actual === $val) aria-current="true" @endif>{{ $txt }}</a>
       @endforeach
     </nav>
-    @endif
+    @else<span></span>@endif
 
-    <p class="resultado">{{ $productos->count() }} {{ $productos->count() === 1 ? 'modelo disponible' : 'modelos disponibles' }}</p>
-
-    @if($productos->isEmpty())
-      <div class="vacio">
-        <p style="font-size:18px;margin:0 0 6px">No encontramos productos con esos filtros.</p>
-        <p style="color:var(--tenue);margin:0 0 18px">Prueba con otra opción o revisa todo el catálogo.</p>
-        <a class="pildora azul" href="{{ route('tienda.catalogo') }}">Ver todo el catálogo</a>
-      </div>
-    @else
-      <div class="grid-prod">
-        @foreach($productos as $p)
-        <a class="tarjeta" href="{{ route('tienda.producto', $p) }}">
-          <div class="foto">
-            @if($p->imagen_url)<img src="{{ $p->imagen_url }}" alt="{{ $p->Nombre }}" loading="lazy">@else<span class="sin" aria-hidden="true">👕</span>@endif
-          </div>
-          <div class="info">
-            <h3>{{ $p->Nombre }}</h3>
-            <div class="meta">{{ $p->segmento_texto }}@if($p->Color) · {{ $p->Color }}@endif · Tallas {{ $p->tallas_ordenadas->where('Stock', '>', 0)->pluck('Talla')->implode(', ') }}</div>
-            <div class="precio">${{ number_format($p->Precioneto, 2) }}</div>
-            @if($p->tiene_mayoreo)<div class="mayoreo">Mayoreo +{{ $p->Min_mayoreo }} pz: ${{ number_format($p->Precio_mayoreo, 2) }}</div>@endif
-          </div>
-        </a>
-        @endforeach
-      </div>
-    @endif
+    <form class="orden" method="get" action="{{ route('tienda.catalogo') }}">
+      @foreach(array_filter(['categoria' => $filtros['categoria'] ?? null, 'q' => $filtros['q'] ?? null, 'filtro' => $filtros['filtro'] ?? null, 'segmento' => $actual]) as $k => $v)<input type="hidden" name="{{ $k }}" value="{{ $v }}">@endforeach
+      <span class="conteo">{{ $productos->count() }} {{ $productos->count() === 1 ? 'modelo' : 'modelos' }}</span>
+      <label for="orden" class="sr-only">Ordenar por</label>
+      <select id="orden" name="orden" onchange="this.form.submit()">
+        @foreach($ordenes as $val => $txt)<option value="{{ $val }}" @selected(($filtros['orden'] ?? '') === $val)>{{ $txt }}</option>@endforeach
+      </select>
+      <noscript><button class="btn btn-claro btn-chico">Ordenar</button></noscript>
+    </form>
   </div>
+
+  @if($productos->isEmpty())
+    <div class="vacio">
+      <div class="circ">@include('htmlv.partials.icono', ['i' => 'buscar'])</div>
+      <h2>No encontramos productos</h2>
+      <p>Prueba con otro filtro o revisa todo el catálogo.</p>
+      <a class="btn btn-primario" href="{{ route('tienda.catalogo') }}">Ver todo el catálogo</a>
+    </div>
+  @else
+    <div class="grid-prod">
+      @foreach($productos as $p)@include('htmlv.partials.tarjeta', ['p' => $p])@endforeach
+    </div>
+  @endif
 </div>
 @endsection

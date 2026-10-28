@@ -1,44 +1,54 @@
 @extends('htmlv.layout')
 
 @section('titulo', 'Compra finalizada')
-@section('sinPie', true)
 
 @section('contenido')
-<div class="panel" style="padding-bottom:0">
-  @include('htmlv.partials.barra', ['titulo' => 'Compra finalizada', 'volver' => route('tienda.pedidos'), 'volverTexto' => 'Regresar'])
+@php
+  $p = $venta->pago;
+  [$clase, $icono, $titulo, $texto] = match (true) {
+    $p?->Estado === 'APROBADO'  => ['ok', 'check-circ', '¡Pago aprobado!', 'Confirmamos tu pago el ' . $p->Validado_en?->format('d/m/Y') . '. Estamos preparando tu pedido.'],
+    $p?->Estado === 'RECHAZADO' => ['mal', 'x-circ', 'Tu pago fue rechazado', 'Motivo: ' . $p->Motivo_rechazo . '. Las piezas se liberaron; puedes volver a hacer tu pedido.'],
+    (bool) $p?->Comprobante     => ['ok', 'check-circ', '¡Gracias por tu compra!', 'Recibimos tu ticket. En breve validaremos tu pedido.'],
+    default                     => ['esp', 'reloj', 'Tu pedido está apartado', 'Sube tu ticket de pago para que podamos validarlo.'],
+  };
+@endphp
 
-  <div class="contenido">
-    <div class="dos-col">
-      <div style="display:flex;flex-direction:column;gap:18px">
-        <div class="campo-pildora"><span class="valor">Dirección: {{ $venta->Direccion_entrega }}</span></div>
-        <div class="campo-pildora"><span class="valor">Piezas: {{ $venta->Total_piezas }}</span></div>
-        <div class="campo-pildora"><span class="valor">Total a pagar: <b>${{ number_format($venta->Total, 2) }}</b></span></div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:18px">
-        <div class="campo-pildora"><span class="valor">C.P.: {{ $venta->CP_entrega }}</span></div>
-        <div class="miniaturas">
-          @foreach($venta->detalles as $d)
-            @if($d->producto?->imagen_url)<img src="{{ $d->producto->imagen_url }}" alt="{{ $d->producto->Nombre }}">@else<span class="sin">👕</span>@endif
-          @endforeach
+<div class="contenedor seccion" style="padding-top:36px">
+  @include('htmlv.partials.pasos', ['paso' => $p?->Comprobante ? 5 : 3])
+
+  <div class="exito">
+    <div class="circ {{ $clase }}">@include('htmlv.partials.icono', ['i' => $icono])</div>
+    <h1>{{ $titulo }}</h1>
+    <p>{{ $texto }}</p>
+
+    <div class="panel">
+      <dl class="dl">
+        <dt>Folio</dt><dd>{{ $p?->Folio ?? '#' . $venta->Id_venta }}</dd>
+        <dt>Estado</dt><dd>@if($p)<span class="etq {{ $p->Estado }}">{{ $p->estado_texto }}</span>@endif</dd>
+        <dt>Dirección</dt><dd>{{ $venta->Direccion_entrega }}</dd>
+        <dt>C.P.</dt><dd>{{ $venta->CP_entrega }}</dd>
+        <dt>Piezas</dt><dd>{{ $venta->Total_piezas }}</dd>
+        <dt>Total</dt><dd style="font-family:var(--f-titulo);font-size:20px">${{ number_format($venta->Total, 2) }}</dd>
+      </dl>
+      <div class="lineas" style="margin-top:20px;border-top:1px solid var(--linea);padding-top:18px">
+        @foreach($venta->detalles as $d)
+        <div class="linea">
+          <span class="mini">@if($d->producto?->imagen_url)<img src="{{ $d->producto->imagen_url }}" alt="">@else @include('htmlv.partials.icono', ['i' => 'ropa']) @endif<span class="n">{{ $d->Cantidad }}</span></span>
+          <span><b>{{ $d->producto?->Nombre ?? 'Producto' }}</b><small>Talla {{ $d->Talla === 'UNI' ? 'única' : $d->Talla }}</small></span>
+          <span class="monto">${{ number_format($d->Subtotal, 2) }}</span>
         </div>
+        @endforeach
       </div>
     </div>
-  </div>
 
-  <div class="banda-blanca">
-    @if($venta->pago?->Estado === 'APROBADO')
-      ✅ Tu pago fue aprobado el {{ $venta->pago->Validado_en?->format('d/m/Y') }}. ¡Gracias por tu compra!
-      <div style="font-size:14px;color:var(--tenue);margin-top:6px">Folio {{ $venta->pago->Folio }}</div>
-    @elseif($venta->pago?->Estado === 'RECHAZADO')
-      <span style="color:var(--error)">Tu pago fue rechazado.</span> Motivo: {{ $venta->pago->Motivo_rechazo }}
-      <div style="font-size:14px;color:var(--tenue);margin-top:6px">Las piezas se liberaron. Puedes <a href="{{ route('tienda.categorias') }}">volver a hacer tu pedido</a> o comunicarte con la tienda.</div>
-    @elseif($venta->pago?->Comprobante)
-      Felicidades por su compra, en breve se validará su pedido. :)
-      <div style="font-size:14px;color:var(--tenue);margin-top:6px">Folio {{ $venta->pago->Folio }} · Puedes ver el estado en <a href="{{ route('tienda.pedidos') }}">Mis pedidos</a>.</div>
-    @else
-      Tu pedido está apartado. <a href="{{ route('tienda.pedido.comprobante', $venta) }}">Sube tu ticket de pago</a> para que lo validemos.
-    @endif
+    <div class="botones">
+      @if($p?->Estado === 'PENDIENTE' && !$p->Comprobante)
+        <a href="{{ route('tienda.pedido.comprobante', $venta) }}" class="btn btn-primario">@include('htmlv.partials.icono', ['i' => 'subir']) Subir ticket</a>
+      @elseif($p?->Estado === 'RECHAZADO')
+        <a href="{{ route('tienda.categorias') }}" class="btn btn-primario">Hacer un nuevo pedido</a>
+      @endif
+      <a href="{{ route('tienda.pedidos') }}" class="btn btn-claro">Ver mis pedidos</a>
+    </div>
   </div>
-  <div style="height:40px"></div>
 </div>
 @endsection

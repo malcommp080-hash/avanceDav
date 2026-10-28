@@ -3,34 +3,35 @@
 @section('titulo', 'Cotización #' . $cot->Id_cotizacion)
 
 @section('contenido')
-<div class="panel">
-  @include('htmlv.partials.barra', ['titulo' => 'Cotización #' . $cot->Id_cotizacion, 'volver' => route('tienda.pedidos')])
+@include('htmlv.partials.barra', ['titulo' => 'Cotización #' . $cot->Id_cotizacion, 'migas' => ['Mis pedidos' => route('tienda.pedidos') . '#cotizaciones', 'Cotización' => null], 'desc' => 'Generada el ' . $cot->Creado_en->format('d/m/Y \a \l\a\s H:i')])
 
-  <div class="contenido" style="max-width:860px">
-    @include('htmlv.partials.avisos')
+<div class="contenedor seccion">
+  @include('htmlv.partials.avisos')
 
-    <div class="lista-carrito">
+  <div class="carrito">
+    <section class="lista-items">
       @foreach($cot->detalles as $d)
       <div class="item">
-        <div class="mini">@if($d->producto?->imagen_url)<img src="{{ $d->producto->imagen_url }}" alt="">@else<span>👕</span>@endif</div>
+        <span class="mini">@if($d->producto?->imagen_url)<img src="{{ $d->producto->imagen_url }}" alt="">@else @include('htmlv.partials.icono', ['i' => 'ropa']) @endif</span>
         <div>
           <h3>{{ $d->producto?->Nombre ?? 'Producto' }}</h3>
           <div class="meta">Talla {{ $d->Talla === 'UNI' ? 'única' : $d->Talla }} · {{ $d->Cantidad }} × ${{ number_format($d->Precio_unitario, 2) }}</div>
         </div>
-        <div class="importe">${{ number_format($d->Subtotal, 2) }}</div>
+        <div class="importe"><b>${{ number_format($d->Subtotal, 2) }}</b></div>
       </div>
       @endforeach
-      <div class="item" style="grid-template-columns:1fr auto"><strong style="font-size:18px">Total cotizado</strong><div class="importe" style="font-size:22px">${{ number_format($cot->Total, 2) }}</div></div>
-    </div>
+    </section>
 
-    <div class="alerta ok" style="margin-top:20px">
-      @if($cot->Estado === 'ATENDIDA')
-        ✅ Un colaborador ya atendió tu cotización el {{ $cot->Atendida_en?->format('d/m/Y') }}.
-      @else
-        ⏳ Enviamos tu cotización a un colaborador; te contactará al teléfono de tu cuenta. Los precios pueden cambiar según existencias.
-      @endif
-    </div>
-    <div style="text-align:center;margin-top:10px"><a href="{{ route('tienda.carrito') }}" class="pildora">Ir a mi carrito</a></div>
+    <aside class="resumen">
+      <h2>Resumen</h2>
+      <div class="fila"><span>Estado</span><span class="etq {{ $cot->Estado }}">{{ $cot->Estado === 'ATENDIDA' ? 'Atendida' : 'En espera' }}</span></div>
+      <div class="total"><span>Total cotizado</span><b>${{ number_format($cot->Total, 2) }}</b></div>
+      <p class="nota" style="margin-top:0">@include('htmlv.partials.icono', ['i' => 'info'])<span>
+        @if($cot->Estado === 'ATENDIDA') Un colaborador atendió tu cotización el {{ $cot->Atendida_en?->format('d/m/Y') }}.
+        @else Un colaborador te contactará al teléfono de tu cuenta. Los precios pueden cambiar según existencias. @endif
+      </span></p>
+      <a href="{{ route('tienda.carrito') }}" class="btn btn-primario btn-bloque" style="margin-top:18px">Ir a mi carrito</a>
+    </aside>
   </div>
 </div>
 @endsection

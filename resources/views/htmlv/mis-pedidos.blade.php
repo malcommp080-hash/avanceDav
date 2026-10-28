@@ -3,51 +3,79 @@
 @section('titulo', 'Mis pedidos')
 
 @section('contenido')
-<div class="panel">
-  @include('htmlv.partials.barra', ['titulo' => 'Mis pedidos', 'volver' => route('tienda.inicio')])
+@include('htmlv.partials.barra', ['titulo' => 'Mis pedidos', 'migas' => ['Mis pedidos' => null], 'desc' => 'Consulta el estado de tus compras y cotizaciones.'])
 
-  <div class="contenido" style="max-width:900px">
-    @include('htmlv.partials.avisos')
+<div class="contenedor seccion" style="max-width:960px">
+  @include('htmlv.partials.avisos')
 
-    <h2 class="seccion-titulo">Compras</h2>
+  <div class="pestanas" role="tablist">
+    <a href="#compras" class="act" data-tab="compras" role="tab" aria-selected="true">Compras <span>{{ $pedidos->count() }}</span></a>
+    <a href="#cotizaciones" data-tab="cotizaciones" role="tab" aria-selected="false">Cotizaciones <span>{{ $cotizaciones->count() }}</span></a>
+  </div>
+
+  <section id="compras" data-panel role="tabpanel">
     @forelse($pedidos as $v)
     @php $p = $v->pago; @endphp
     <div class="pedido">
       <div>
-        <h3>{{ $p?->Folio ?? '#' . $v->Id_venta }} · ${{ number_format($v->Total, 2) }}</h3>
-        <div class="meta">{{ $v->fecha_texto }} · {{ $v->Total_piezas }} pieza(s) · Entrega en {{ $v->Direccion_entrega }}, C.P. {{ $v->CP_entrega }}</div>
-        @if($p)<div style="margin-top:6px"><span class="estado {{ $p->Estado }}">{{ $p->estado_texto }}</span>
-          @if($p->Validado_en)<span class="meta"> · {{ $p->Validado_en->format('d/m/Y H:i') }}</span>@endif</div>
-          @if($p->Estado === 'RECHAZADO')<div class="meta" style="color:var(--error);margin-top:4px">Motivo: {{ $p->Motivo_rechazo }}. Las piezas se liberaron; puedes volver a hacer tu pedido.</div>@endif
-          @if($p->Estado === 'APROBADO')<div class="meta" style="color:var(--ok);margin-top:4px">¡Pago confirmado! Preparamos tu pedido para la entrega.</div>@endif
-        @endif
+        <div class="cab"><h3>{{ $p?->Folio ?? '#' . $v->Id_venta }}</h3>@if($p)<span class="etq {{ $p->Estado }}">{{ $p->estado_texto }}</span>@endif</div>
+        <div class="meta">{{ $v->fecha_texto }} · {{ $v->Total_piezas }} {{ $v->Total_piezas === 1 ? 'pieza' : 'piezas' }} · {{ $v->Direccion_entrega }}, C.P. {{ $v->CP_entrega }}</div>
+        @if($p?->Estado === 'RECHAZADO')<div class="nota mal">Motivo: {{ $p->Motivo_rechazo }}. Las piezas se liberaron; puedes volver a hacer tu pedido.</div>@endif
+        @if($p?->Estado === 'APROBADO')<div class="nota bien">Pago confirmado el {{ $p->Validado_en?->format('d/m/Y') }}. Preparamos tu pedido.</div>@endif
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        @if($p && $p->Estado === 'PENDIENTE' && !$p->Comprobante)
-          <a href="{{ route('tienda.pedido.pago', $v) }}" class="pildora chica azul">Pagar</a>
-        @elseif($p && $p->Estado === 'PENDIENTE')
-          <a href="{{ route('tienda.pedido.comprobante', $v) }}" class="pildora chica">Cambiar ticket</a>
-        @endif
-        <a href="{{ route('tienda.pedido.finalizado', $v) }}" class="pildora chica">Ver</a>
+      <div class="der">
+        <b>${{ number_format($v->Total, 2) }}</b>
+        <div class="botones">
+          @if($p && $p->Estado === 'PENDIENTE' && !$p->Comprobante)
+            <a href="{{ route('tienda.pedido.pago', $v) }}" class="btn btn-primario btn-chico">Pagar</a>
+          @elseif($p && $p->Estado === 'PENDIENTE')
+            <a href="{{ route('tienda.pedido.comprobante', $v) }}" class="btn btn-claro btn-chico">Cambiar ticket</a>
+          @endif
+          <a href="{{ route('tienda.pedido.finalizado', $v) }}" class="btn btn-claro btn-chico">Ver</a>
+        </div>
       </div>
     </div>
     @empty
-    <div class="vacio">Aún no tienes compras. <a href="{{ route('tienda.categorias') }}">Explora el catálogo</a>.</div>
+    <div class="vacio">
+      <div class="circ">@include('htmlv.partials.icono', ['i' => 'bolsa'])</div>
+      <h2>Aún no tienes compras</h2>
+      <p>Cuando hagas un pedido lo verás aquí con el estado de tu pago.</p>
+      <a class="btn btn-primario" href="{{ route('tienda.categorias') }}">Explorar el catálogo</a>
+    </div>
     @endforelse
+  </section>
 
-    <h2 class="seccion-titulo">Cotizaciones</h2>
+  <section id="cotizaciones" data-panel role="tabpanel" hidden>
     @forelse($cotizaciones as $c)
     <div class="pedido">
       <div>
-        <h3>Cotización #{{ $c->Id_cotizacion }} · ${{ number_format($c->Total, 2) }}</h3>
-        <div class="meta">{{ $c->Creado_en->format('d/m/Y H:i') }} · {{ $c->detalles_count }} artículo(s)</div>
-        <div style="margin-top:6px"><span class="estado {{ $c->Estado }}">{{ $c->Estado === 'ATENDIDA' ? 'Atendida' : 'En espera de un colaborador' }}</span></div>
+        <div class="cab"><h3>Cotización #{{ $c->Id_cotizacion }}</h3><span class="etq {{ $c->Estado }}">{{ $c->Estado === 'ATENDIDA' ? 'Atendida' : 'En espera' }}</span></div>
+        <div class="meta">{{ $c->Creado_en->format('d/m/Y H:i') }} · {{ $c->detalles_count }} {{ $c->detalles_count === 1 ? 'artículo' : 'artículos' }}</div>
       </div>
-      <a href="{{ route('tienda.cotizacion', $c) }}" class="pildora chica">Ver</a>
+      <div class="der"><b>${{ number_format($c->Total, 2) }}</b><a href="{{ route('tienda.cotizacion', $c) }}" class="btn btn-claro btn-chico">Ver</a></div>
     </div>
     @empty
-    <div class="vacio">No has generado cotizaciones. Puedes hacerlo desde tu <a href="{{ route('tienda.carrito') }}">carrito</a>.</div>
+    <div class="vacio">
+      <div class="circ">@include('htmlv.partials.icono', ['i' => 'documento'])</div>
+      <h2>Sin cotizaciones</h2>
+      <p>Puedes generar una desde tu carrito sin pagar de inmediato.</p>
+      <a class="btn btn-primario" href="{{ route('tienda.carrito') }}">Ir al carrito</a>
+    </div>
     @endforelse
-  </div>
+  </section>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+  const tabs = document.querySelectorAll('[data-tab]'), paneles = document.querySelectorAll('[data-panel]');
+  function mostrar(id) {
+    tabs.forEach(t => { const a = t.dataset.tab === id; t.classList.toggle('act', a); t.setAttribute('aria-selected', a); });
+    paneles.forEach(p => p.hidden = p.id !== id);
+  }
+  tabs.forEach(t => t.addEventListener('click', e => { e.preventDefault(); mostrar(t.dataset.tab); history.replaceState(null, '', '#' + t.dataset.tab); }));
+  if (location.hash === '#cotizaciones') mostrar('cotizaciones');
+})();
+</script>
+@endpush

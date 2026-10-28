@@ -1,12 +1,11 @@
 @extends('htmlv.auth')
 
-@section('titulo', 'Recuperar contraseña')
+@section('titulo', '¡Contraseña actualizada!')
+@section('icono', 'check-circ')
 
 @section('contenido')
-<div class="auth-card auth-exito">
-  <h2>Contraseña actualizada</h2>
-  <div class="icono" aria-hidden="true">🎉</div>
-  <p>¡Contraseña actualizada!</p>
-  <a href="{{ route('tienda.login') }}" class="btn-auth redondo">Iniciar sesión →</a>
+<div class="auth-exito">
+  <p class="sub" style="margin-top:0">Ya puedes iniciar sesión con tu nueva contraseña.</p>
+  <a href="{{ route('tienda.login') }}" class="btn btn-primario btn-bloque btn-grande">Iniciar sesión @include('htmlv.partials.icono', ['i' => 'flecha'])</a>
 </div>
 @endsection

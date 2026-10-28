@@ -1,23 +1,18 @@
 @extends('htmlv.auth')
 
 @section('titulo', 'Recuperar contraseña')
+@section('subtitulo', 'Escribe el teléfono y el código postal con los que te registraste.')
+@section('icono', 'clave')
 
 @section('contenido')
-<form action="{{ route('tienda.recuperar.buscar') }}" method="post" style="display:contents">
+<form action="{{ route('tienda.recuperar.buscar') }}" method="post">
   @csrf
-  <div class="auth-card">
-    <div class="auth-fila">@include('htmlv.partials.icono', ['i' => 'tel'])
-      <div><label for="telefono">Número de teléfono</label>
-        <input type="tel" id="telefono" name="telefono" inputmode="numeric" maxlength="10" placeholder="El teléfono de tu cuenta" value="{{ old('telefono') }}" required autofocus></div></div>
-    <div class="auth-fila">@include('htmlv.partials.icono', ['i' => 'ubicacion'])
-      <div><label for="cp">Código postal registrado</label>
-        <input id="cp" name="cp" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" title="5 dígitos" value="{{ old('cp') }}" required>
-        <div class="ayuda">Lo pedimos para confirmar que la cuenta es tuya.</div></div></div>
-  </div>
-
-  <div class="auth-botones" style="margin-top:-22px">
-    <button type="submit" class="btn-auth cuenta">Buscar tu cuenta</button>
-  </div>
+  @include('htmlv.partials.campo', ['id' => 'telefono', 'label' => 'Número de teléfono', 'ico' => 'tel', 'tipo' => 'tel', 'attrs' => 'inputmode="numeric" maxlength="10" placeholder="El teléfono de tu cuenta" required autofocus'])
+  @include('htmlv.partials.campo', ['id' => 'cp', 'label' => 'Código postal registrado', 'ico' => 'ubicacion', 'attrs' => 'inputmode="numeric" maxlength="5" pattern="[0-9]{5}" title="5 dígitos" required', 'ayuda' => 'Lo pedimos para confirmar que la cuenta es tuya.'])
+  <button type="submit" class="btn btn-primario btn-bloque btn-grande">Buscar mi cuenta</button>
 </form>
-<a class="auth-volver" href="{{ route('tienda.login') }}">← Volver al inicio de sesión</a>
+@endsection
+
+@section('pie')
+<p class="auth-pie"><a href="{{ route('tienda.login') }}">← Volver al inicio de sesión</a></p>
 @endsection

@@ -4,58 +4,113 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>@yield('titulo', 'Tienda') — Distribuidora David</title>
+  <meta name="description" content="Ropa para caballero, dama y niños con precio de mayoreo. Distribuidora David, San Martín Texmelucan, Puebla.">
+  <link rel="icon" href="{{ asset('img/logo.jpeg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ asset('css/tienda.css') }}">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ asset('css/tienda.css') }}?v={{ filemtime(public_path('css/tienda.css')) }}">
   @stack('head')
 </head>
 <body>
-@php $piezasCarrito = \App\Services\Carrito::piezas(); @endphp
+@php
+  $piezasCarrito = \App\Services\Carrito::piezas();
+  $navActual = fn ($cond) => $cond ? 'act' : '';
+@endphp
 
-<header class="enc">
+<a href="#contenido" class="sr-only">Saltar al contenido</a>
+
+<div class="franja">Precio de <b>mayoreo</b> desde 5 piezas por modelo · Combina tallas · Paga por depósito o transferencia</div>
+
+<header class="enc" id="enc">
   <div class="enc-fila">
-    <a href="{{ route('tienda.inicio') }}" class="enc-logo" title="Inicio"><img src="{{ asset('img/logo.jpeg') }}" alt="Distribuidora David"></a>
+    <a href="{{ route('tienda.inicio') }}" class="marca">
+      <img src="{{ asset('img/logo.jpeg') }}" alt="">
+      <span class="nombre">Distribuidora David<small>Ropa · Mayoreo y menudeo</small></span>
+    </a>
 
     <form class="buscador" action="{{ route('tienda.catalogo') }}" method="get" role="search">
-      <input type="search" name="q" placeholder="Buscar" value="{{ request('q') }}" aria-label="Buscar productos" maxlength="60">
-      <button type="submit" aria-label="Buscar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg></button>
+      @include('htmlv.partials.icono', ['i' => 'buscar'])
+      <label for="q" class="sr-only">Buscar productos</label>
+      <input type="search" id="q" name="q" placeholder="Busca chamarras, polos, jeans…" value="{{ request('q') }}" maxlength="60" autocomplete="off">
+      <button type="submit">Buscar</button>
     </form>
 
-    <a href="{{ route('tienda.carrito') }}" class="enc-carrito" aria-label="Carrito ({{ $piezasCarrito }} piezas)">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h2.2l2.4 12.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.5L21 7H5.4"/><circle cx="9.5" cy="20.5" r="1.4"/><circle cx="17.5" cy="20.5" r="1.4"/></svg>
-      @if($piezasCarrito)<span class="globo">{{ $piezasCarrito > 99 ? '99+' : $piezasCarrito }}</span>@endif
-    </a>
+    <div class="enc-acciones">
+      @if(session('cliente_id'))
+        <a href="{{ route('tienda.pedidos') }}" class="accion" title="Mis pedidos">@include('htmlv.partials.icono', ['i' => 'usuario'])<span class="txt">{{ \Illuminate\Support\Str::of(session('cliente_nombre'))->before(' ') }}</span></a>
+        <form action="{{ route('tienda.logout') }}" method="post">@csrf
+          <button type="submit" class="accion" title="Cerrar sesión">@include('htmlv.partials.icono', ['i' => 'salir'])<span class="sr-only">Cerrar sesión</span></button>
+        </form>
+      @else
+        <a href="{{ route('tienda.login') }}" class="accion">@include('htmlv.partials.icono', ['i' => 'usuario'])<span class="txt">Entrar</span></a>
+      @endif
+      <a href="{{ route('tienda.carrito') }}" class="accion" aria-label="Carrito, {{ $piezasCarrito }} piezas">
+        @include('htmlv.partials.icono', ['i' => 'bolsa'])<span class="txt">Carrito</span>
+        @if($piezasCarrito)<span class="globo">{{ $piezasCarrito > 99 ? '99+' : $piezasCarrito }}</span>@endif
+      </a>
+    </div>
   </div>
 
   <nav class="enc-nav" aria-label="Principal">
-    <a href="{{ route('tienda.categorias') }}" class="{{ request()->routeIs('tienda.categorias') ? 'act' : '' }}">Categorías</a>
-    <a href="{{ route('tienda.catalogo', ['filtro' => 'ofertas']) }}" class="{{ request('filtro') === 'ofertas' ? 'act' : '' }}">Ofertas</a>
-    @if(session('cliente_id'))
-      <a href="{{ route('tienda.pedidos') }}" class="{{ request()->routeIs('tienda.pedidos') ? 'act' : '' }}">Mis pedidos</a>
-      <form action="{{ route('tienda.logout') }}" method="post" style="display:inline">@csrf<button type="submit">Cerrar sesión</button></form>
-    @else
-      <a href="{{ route('tienda.login') }}">Iniciar sesión</a>
-      <a href="{{ route('tienda.registro') }}">Crear Cuenta</a>
-    @endif
+    <ul>
+      <li><a href="{{ route('tienda.inicio') }}" class="{{ $navActual(request()->routeIs('tienda.inicio')) }}">Inicio</a></li>
+      @foreach($navCategorias ?? [] as $c)
+      <li><a href="{{ route('tienda.catalogo', ['categoria' => $c->Id_categoria]) }}" class="{{ $navActual(request()->routeIs('tienda.catalogo') && (int) request('categoria') === $c->Id_categoria) }}">{{ $c->Nombre }}</a></li>
+      @endforeach
+      <li><a href="{{ route('tienda.catalogo', ['filtro' => 'ofertas']) }}" class="{{ $navActual(request('filtro') === 'ofertas') }}">Ofertas</a></li>
+      <li><a href="{{ route('tienda.catalogo', ['filtro' => 'vendidos']) }}" class="{{ $navActual(request('filtro') === 'vendidos') }}">Más vendidos</a></li>
+      <li><a href="{{ route('tienda.categorias') }}" class="{{ $navActual(request()->routeIs('tienda.categorias')) }}">Todas las categorías</a></li>
+    </ul>
   </nav>
 </header>
-<div class="espacio-nav"></div>
 
-<main>
+<main id="contenido">
   @yield('contenido')
 </main>
 
-@hasSection('sinPie')
-@else
 <footer class="pie">
-  <div class="caja">
-    <div>Visítanos en:</div>
-    <div>{{ config('dav.direccion') }}</div>
+  <div class="pie-fila">
+    <div>
+      <a href="{{ route('tienda.inicio') }}" class="marca"><img src="{{ asset('img/logo.jpeg') }}" alt=""><span class="nombre">Distribuidora David<small>Ropa · Mayoreo y menudeo</small></span></a>
+      <p>Ropa para toda la familia con precio de mayoreo desde 5 piezas por modelo.</p>
+    </div>
+    <div>
+      <h4>Comprar</h4>
+      <ul>
+        @foreach(($navCategorias ?? collect())->take(5) as $c)<li><a href="{{ route('tienda.catalogo', ['categoria' => $c->Id_categoria]) }}">{{ $c->Nombre }}</a></li>@endforeach
+        <li><a href="{{ route('tienda.catalogo', ['filtro' => 'ofertas']) }}">Ofertas</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Mi cuenta</h4>
+      <ul>
+        @if(session('cliente_id'))
+          <li><a href="{{ route('tienda.pedidos') }}">Mis pedidos</a></li>
+        @else
+          <li><a href="{{ route('tienda.login') }}">Iniciar sesión</a></li>
+          <li><a href="{{ route('tienda.registro') }}">Crear cuenta</a></li>
+        @endif
+        <li><a href="{{ route('tienda.carrito') }}">Carrito</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Visítanos</h4>
+      <p style="margin:0">{{ config('dav.direccion') }}</p>
+    </div>
   </div>
+  <div class="pie-legal"><div><span>© {{ date('Y') }} Distribuidora David</span><span>Pagos por depósito o transferencia · Validados por nuestro equipo</span></div></div>
 </footer>
-@endif
 
 @if(session('cliente_id'))@include('partials.inactividad')@endif
+<script>
+  // Sombra del encabezado al desplazarse
+  (function () {
+    const enc = document.getElementById('enc');
+    const f = () => enc.classList.toggle('con-sombra', window.scrollY > 8);
+    f(); window.addEventListener('scroll', f, { passive: true });
+  })();
+</script>
 @stack('scripts')
 </body>
 </html>

@@ -31,6 +31,10 @@ class TiendaController extends Controller
             'oferta'     => $this->visibles()->whereNotNull('Precio_mayoreo')->inRandomOrder()->first(),
             'menos100'   => $this->visibles()->where('Precioneto', '<', 100)->orderByDesc('Precioneto')->first(),
             'masVendido' => $vendidos ? $this->visibles()->whereKey($vendidos[0])->first() : $this->visibles()->latest('Id_producto')->first(),
+            'novedades'  => $this->visibles()->orderByDesc('Id_producto')->limit(8)->get(),
+            'portadas'   => $this->visibles()->whereNotNull('Imagen')->inRandomOrder()->limit(3)->get(),
+            'categorias' => Categoria::withCount(['productos' => fn ($q) => $q->where('Activo', true)->where('Stock', '>', 0)])
+                ->orderBy('Nombre')->get(),
         ]);
     }
 
@@ -53,6 +57,7 @@ class TiendaController extends Controller
             'segmento'  => 'nullable|in:' . implode(',', array_keys(Producto::SEGMENTOS)),
             'q'         => 'nullable|string|max:60',
             'filtro'    => 'nullable|in:ofertas,menos100,vendidos',
+            'orden'     => 'nullable|in:nombre,precio_asc,precio_desc,nuevos',
         ]);
 
         $categoria = isset($f['categoria']) ? Categoria::find($f['categoria']) : null;
@@ -75,7 +80,15 @@ class TiendaController extends Controller
         }
         if (!empty($f['q'])) $titulo = 'Resultados para "' . $f['q'] . '"';
 
-        $productos = $q->orderBy('Nombre')->get();
+        // "Más vendidos" ya viene ordenado por ventas salvo que se pida otro orden
+        match ($f['orden'] ?? null) {
+            'precio_asc'  => $q->reorder()->orderBy('Precioneto'),
+            'precio_desc' => $q->reorder()->orderByDesc('Precioneto'),
+            'nuevos'      => $q->reorder()->orderByDesc('Id_producto'),
+            'nombre'      => $q->reorder()->orderBy('Nombre'),
+            default       => $q->orderBy('Nombre'),
+        };
+        $productos = $q->get();
 
         // Segmentos que tienen algo en esta categoría, para no mostrar filtros vacíos
         $conSegmento = Producto::where('Activo', true)->where('Stock', '>', 0)
