@@ -47,6 +47,7 @@
       <div class="fg"><label>Apellido Paterno *</label><input class="fc" type="text" name="ap_paterno" maxlength="20" placeholder="Apellido" value="{{ old('ap_paterno', $e->Ap_paterno ?? '') }}" required></div>
       <div class="fg"><label>Teléfono *</label><input class="fc" type="text" name="telefono" placeholder="10 dígitos" maxlength="10" value="{{ old('telefono', $e->Telefono ?? '') }}" required></div>
       <div class="fg"><label>Dirección *</label><input class="fc" type="text" name="direccion" maxlength="40" placeholder="Dirección" value="{{ old('direccion', $e->Direccion ?? '') }}" required></div>
+      <div class="fg"><label>Puesto *</label><input class="fc" type="text" name="puesto" maxlength="40" placeholder="Ej. Encargado de almacén" value="{{ old('puesto', $e->Puesto ?? '') }}" required></div>
       <div class="fg"><label>Contraseña {{ $e ? '(vacío = no cambiar)' : '* (mín. 6 car.)' }}</label><input class="fc" type="password" name="contrasena" placeholder="••••••••" minlength="6" {{ $e ? '' : 'required' }}></div>
       <div class="fg"><label>Rol *</label>
         <select class="fc" name="rol" required>
@@ -64,15 +65,15 @@
 <div class="tcard">
   <div class="tcard-hdr"><div class="tcard-ttl"><i class="fas fa-user-gear" style="color:var(--accent2)"></i> Empleados registrados</div></div>
   <table>
-    <thead><tr><th>ID</th><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Dirección</th><th>Rol</th><th>Editar</th><th>Eliminar</th></tr></thead>
+    <thead><tr><th>ID</th><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Dirección</th><th>Puesto</th><th>Rol</th><th>Editar</th><th>Eliminar</th></tr></thead>
     <tbody>
       @foreach($empleados as $emp)
       @php $rc = ['admin' => '#f75e5e', 'vendedor' => '#4f8ef7', 'almacen' => '#22d3a5', 'contador' => '#f7c948'][$emp->rol] ?? '#7a8099'; @endphp
-      <tr><td>{{ $emp->Id_empleado }}</td><td>{{ $emp->Nombre }}</td><td>{{ $emp->Ap_paterno }}</td><td>{{ $emp->Telefono }}</td><td>{{ $emp->Direccion }}</td>
+      <tr><td>{{ $emp->Id_empleado }}</td><td>{{ $emp->Nombre }}</td><td>{{ $emp->Ap_paterno }}</td><td>{{ $emp->Telefono }}</td><td>{{ $emp->Direccion }}</td><td>{{ $emp->Puesto ?? '—' }}</td>
         <td><span style="background:{{ $rc }}22;color:{{ $rc }};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase">{{ $emp->rol }}</span></td>
         <td><a href="{{ route('admin.usuarios.edit', $emp) }}" class="ib ib-edit" title="Modificar"><i class="fas fa-pencil-alt"></i></a></td><td><form action="{{ route('admin.usuarios.destroy', $emp) }}" method="post" style="display:inline" onsubmit="return confirm('¿Eliminar este registro?')">@csrf @method('DELETE')<button type="submit" class="ib ib-del" title="Eliminar"><i class="fas fa-times"></i></button></form></td></tr>
       @endforeach
-      @if($empleados->isEmpty())<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No hay empleados registrados.</td></tr>@endif
+      @if($empleados->isEmpty())<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">No hay empleados registrados.</td></tr>@endif
     </tbody>
   </table>
 </div>

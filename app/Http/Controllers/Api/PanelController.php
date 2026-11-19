@@ -7,7 +7,9 @@ use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\Notificacion;
 use App\Models\Pago;
+use App\Models\Pedido;
 use App\Models\Prenda;
+use App\Models\ProductoTalla;
 use App\Models\Venta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -33,7 +35,25 @@ class PanelController extends ApiController
             $meses[] = ['etiqueta' => ucfirst($mes->translatedFormat('M Y')), 'total' => $porMes[$mes->format('Y-m')] ?? 0];
         }
 
+        // RF006: indicadores del día. Pedidos pendientes = pedidos de clientes registrados
+        // (la tabla no tiene estado: se borran al entregarse) + compras en línea con el pago sin validar.
+        $hoy = Venta::reales()->whereDate('Fecha', today());
+        $pedidosClientes = Pedido::count();
+        $comprasPorValidar = Pago::where('Estado', 'PENDIENTE')->count();
+        $bajo = ProductoTalla::with('producto:Id_producto,Nombre')
+            ->where('Stock', '<', 5)
+            ->whereHas('producto', fn ($q) => $q->where('Activo', true))
+            ->orderBy('Stock')->get();
+
         return response()->json([
+            'ventasHoy'      => ['cantidad' => (clone $hoy)->count(), 'monto' => (float) (clone $hoy)->sum('Total')],
+            'pedidosPendientes' => ['total' => $pedidosClientes + $comprasPorValidar, 'clientes' => $pedidosClientes, 'enLinea' => $comprasPorValidar],
+            'inventarioBajo' => [
+                'total' => $bajo->count(),
+                'piezas' => $bajo->take(5)->map(fn ($t) => [
+                    'producto' => $t->producto?->Nombre ?? '—', 'talla' => $t->Talla === 'UNI' ? 'Única' : $t->Talla, 'stock' => $t->Stock,
+                ])->values(),
+            ],
             'meses'          => $meses,
             'ultimosClientes' => Cliente::orderByDesc('Id_cliente')->limit(5)->get()->map(fn ($c) => [
                 'id' => $c->Id_cliente, 'nombre' => $c->nombre_completo, 'telefono' => $c->Telefono, 'direccion' => $c->Direccion,

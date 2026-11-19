@@ -12,6 +12,9 @@ import { dinero } from "@/lib/api";
 
 type Dashboard = {
   saludo: string;
+  ventasHoy: { cantidad: number; monto: number };
+  pedidosPendientes: { total: number; clientes: number; enLinea: number };
+  inventarioBajo: { total: number; piezas: { producto: string; talla: string; stock: number }[] };
   totalClientes: number;
   totalVentas: number;
   totalPrendas: number;
@@ -38,6 +41,48 @@ export default function DashboardScreen() {
 
       {d ? (
         <>
+          {/* RF006: lo que el administrador revisa primero cada día */}
+          <Text style={styles.seccion}>HOY</Text>
+          <View style={styles.grid}>
+            <Estadistica
+              color="azul"
+              valor={dinero(d.ventasHoy.monto)}
+              etiqueta={`Ventas del día · ${d.ventasHoy.cantidad} ${d.ventasHoy.cantidad === 1 ? "venta" : "ventas"}`}
+              icono="cash-register"
+              accion="Ver ventas"
+              onPress={() => router.navigate("/ventas")}
+            />
+            <Estadistica
+              color="amber"
+              valor={String(d.pedidosPendientes.total)}
+              etiqueta={`Pedidos pendientes · ${d.pedidosPendientes.clientes} de clientes, ${d.pedidosPendientes.enLinea} en línea`}
+              icono="box"
+              accion="Ver pedidos"
+              onPress={() => router.navigate("/pedidos")}
+            />
+            <Estadistica
+              color="red"
+              valor={String(d.inventarioBajo.total)}
+              etiqueta={`Inventario bajo · tallas con menos de 5 piezas`}
+              icono="exclamation-triangle"
+              accion="Ver inventario"
+              onPress={() => router.navigate("/inventario")}
+            />
+          </View>
+
+          {d.inventarioBajo.piezas.length ? (
+            <Tabla
+              icono="exclamation-triangle"
+              colorIcono={Color.peligro}
+              titulo="Por agotarse"
+              columnas={["Producto", "Talla", "Piezas"]}
+              filas={d.inventarioBajo.piezas.map((p) => [p.producto, p.talla, String(p.stock)])}
+              onFila={() => router.navigate("/inventario")}
+              vacio="Sin tallas bajas."
+            />
+          ) : null}
+
+          <Text style={styles.seccion}>GENERAL</Text>
           <View style={styles.grid}>
             <Estadistica color="teal" valor={String(d.totalClientes)} etiqueta="Clientes Registrados" icono="users" accion="Ver clientes" onPress={() => router.navigate("/clientes")} />
             <Estadistica color="green" valor={String(d.totalVentas)} etiqueta="Ventas Totales" icono="chart-bar" accion="Ver ventas" onPress={() => router.navigate("/ventas")} />
@@ -99,6 +144,13 @@ function Dato({ titulo, valor, color }: { titulo: string; valor: number; color: 
 }
 
 const styles = StyleSheet.create({
+  seccion: {
+    color: Color.textoSuave,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",

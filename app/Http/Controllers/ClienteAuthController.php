@@ -66,11 +66,12 @@ class ClienteAuthController extends Controller
             'confirmar'  => 'required|same:contrasena',
             'direccion'  => 'required|string|max:100',
             'cp'         => ['required', 'regex:/^[0-9]{5}$/'],
-        ], $this->mensajes + [
+        ], [
+            // RF011: el aviso de la tienda tiene prioridad sobre el general de empleados
             'telefono.unique' => 'Este número ya cuenta con una cuenta.',
             'telefono.regex'  => 'El teléfono debe tener 10 dígitos.',
             'cp.regex'        => 'El código postal debe tener 5 dígitos.',
-        ], $this->atributos + ['paterno' => 'apellido paterno']);
+        ] + $this->mensajes, $this->atributos + ['paterno' => 'apellido paterno']);
 
         Cliente::create([
             'Nombre' => $d['nombre'], 'Ap_paterno' => $d['paterno'], 'Telefono' => $d['telefono'],

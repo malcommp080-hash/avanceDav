@@ -10,7 +10,7 @@ class Empleado extends Model
     protected $primaryKey = 'Id_empleado';
     public $timestamps = false;
 
-    protected $fillable = ['Nombre', 'Ap_paterno', 'Telefono', 'Direccion', 'Contrasena', 'rol'];
+    protected $fillable = ['Nombre', 'Ap_paterno', 'Telefono', 'Direccion', 'Puesto', 'Contrasena', 'rol'];
 
     protected $hidden = ['Contrasena'];
 }

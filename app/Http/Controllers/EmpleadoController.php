@@ -31,6 +31,7 @@ class EmpleadoController extends Controller
             'telefono'   => ['required', 'string', 'max:10',
                 Rule::unique('empleado', 'Telefono')->ignore($actual?->Id_empleado, 'Id_empleado')],
             'direccion'  => 'required|string|max:40',
+            'puesto'     => 'required|string|max:40',
             'contrasena' => [$actual ? 'nullable' : 'required', 'string', 'min:6', 'max:100'],
             'rol'        => 'required|in:admin,vendedor,almacen,contador',
         ];
@@ -41,7 +42,7 @@ class EmpleadoController extends Controller
         $d = $this->validar($request, $this->reglas());
         Empleado::create([
             'Nombre' => $d['nombre'], 'Ap_paterno' => $d['ap_paterno'], 'Telefono' => $d['telefono'],
-            'Direccion' => $d['direccion'], 'Contrasena' => Hash::make($d['contrasena']), 'rol' => $d['rol'],
+            'Direccion' => $d['direccion'], 'Puesto' => $d['puesto'], 'Contrasena' => Hash::make($d['contrasena']), 'rol' => $d['rol'],
         ]);
         return redirect()->route('admin.usuarios.index')->with('ok', 'Empleado guardado correctamente.');
     }
@@ -56,7 +57,7 @@ class EmpleadoController extends Controller
         $d = $this->validar($request, $this->reglas($usuario));
         $usuario->fill([
             'Nombre' => $d['nombre'], 'Ap_paterno' => $d['ap_paterno'], 'Telefono' => $d['telefono'],
-            'Direccion' => $d['direccion'], 'rol' => $d['rol'],
+            'Direccion' => $d['direccion'], 'Puesto' => $d['puesto'], 'rol' => $d['rol'],
         ]);
         if (!empty($d['contrasena'])) {
             $usuario->Contrasena = Hash::make($d['contrasena']);

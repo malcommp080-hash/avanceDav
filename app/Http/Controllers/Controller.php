@@ -24,6 +24,7 @@ abstract class Controller
         'exists'    => 'El valor seleccionado en :attribute no es válido.',
         'in'        => 'El valor seleccionado en :attribute no es válido.',
         'unique'    => 'Ese :attribute ya está registrado.',
+        'telefono.unique' => 'Este número ya está registrado.', // RF005
         'regex'     => 'El formato de :attribute no es válido.',
         'file'      => 'Debes seleccionar un archivo válido.',
     ];
